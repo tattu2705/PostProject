@@ -4,7 +4,6 @@ const { validationResult } = require('express-validator')
 
 const Post = require('../models/post')
 const User = require('../models/user')
-const io = require('../socket')
 
 exports.getPosts = async (req, res, next) => {
     const currentPage = req.query.page || 1
@@ -55,9 +54,6 @@ exports.createPost = (req, res, next) => {
             creator = user
             user.posts.push(post)
             return user.save()
-        })
-        .then(result => {
-            return io.getIO().emit('posts', { action: 'create', post})
         })
         .then(result => {
             res.status(201).json({
@@ -134,7 +130,6 @@ exports.updatePost = (req, res, next) => {
             return post.save()
         })
         .then(result => {
-            io.getIO().emit('posts', { action: 'update', post: result})
             res.status(200).json({ message: 'Post updated', post: result })
         })
         .catch(err => {

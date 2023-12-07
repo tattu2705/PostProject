@@ -1,4 +1,5 @@
 const path = require('path')
+const fs = require('fs')
 const express = require('express')
 const bodyParser = require('body-parser')
 const feedRoutes = require('./routes/feed')
@@ -8,9 +9,16 @@ const mongoose = require('mongoose')
 const multer = require('multer')
 const { v4: uuidv4 } = require('uuid')
 const cors = require('cors')
+const helmet = require('helmet')
+const compression = require('compression')
+const morgan = require('morgan')
+const https = require('https')
+require('dotenv').config()
 
 const app = express()
 app.use(cors())
+const privateKey = fs.readFileSync('server.key')
+const certificate = fs.readFileSync('server.cert')
 
 const fileStorage = multer.diskStorage({
     destination: (req, res, cb) => {
@@ -37,6 +45,9 @@ app.use('/images', express.static(path.join(__dirname, 'images')))
 
 app.use('/feed', feedRoutes)
 app.use('/auth', authRoutes)
+app.use(helmet())
+app.use(compression())
+app.use(morgan('combined'))
 
 
 app.use((error, req, res, next) => {
@@ -50,14 +61,10 @@ app.use((error, req, res, next) => {
 })
 
 mongoose.connect(
-    'mongodb+srv://tattu2705:nosexnolife123@cluster0.zvdjjox.mongodb.net/messages'
+    process.env.MONGO_URI 
 )
     .then(result => {
-        const server = app.listen(8080)
-        const io = require('./socket').init(server)
-        io.on('connection', (socket) => {
-
-        })
-        
+        // https.createServer({key: privateKey, cert: certificate}, app).listen(8080)
+        app.listen(8080)
     })
     .catch(err => console.log(err))
